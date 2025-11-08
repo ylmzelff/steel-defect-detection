@@ -1,0 +1,59 @@
+# Python Dependencies for Steel Defect Detection MLOps Pipeline
+
+# Deep Learning and Computer Vision
+ultralytics>=8.0.0          # YOLOv8 implementation
+torch>=1.12.0               # PyTorch deep learning framework  
+torchvision>=0.13.0         # PyTorch computer vision utilities
+opencv-python>=4.7.0        # Computer vision library
+Pillow>=9.0.0               # Image processing library
+
+# Data Processing
+numpy>=1.21.0               # Numerical computing
+pandas>=1.4.0               # Data manipulation and analysis
+PyYAML>=6.0                 # YAML file processing
+pathlib>=1.0.1              # Path manipulation utilities
+
+# Visualization and Plotting
+matplotlib>=3.5.0           # Plotting library
+seaborn>=0.11.0            # Statistical data visualization
+plotly>=5.0.0              # Interactive plotting (optional)
+
+# Progress and Utilities  
+tqdm>=4.64.0               # Progress bars
+click>=8.0.0               # Command line interface
+rich>=12.0.0               # Rich text and progress displays
+
+# MLOps and Experiment Tracking (optional)
+# wandb>=0.13.0            # Weights & Biases experiment tracking
+# tensorboard>=2.8.0       # TensorBoard logging
+# mlflow>=1.28.0           # MLflow experiment tracking
+
+# API and Web Framework (for deployment)
+fastapi>=0.95.0            # Fast API framework
+uvicorn>=0.18.0            # ASGI server
+pydantic>=1.9.0            # Data validation
+python-multipart>=0.0.5    # File upload support
+
+# Development and Testing
+pytest>=7.0.0              # Testing framework
+black>=22.0.0              # Code formatter
+flake8>=5.0.0              # Linting
+mypy>=0.991                # Type checking
+pre-commit>=2.20.0         # Git hooks
+
+# Jupyter and Notebooks
+jupyter>=1.0.0             # Jupyter notebook
+ipywidgets>=8.0.0          # Interactive widgets
+nbformat>=5.4.0            # Notebook format
+
+# Docker and Deployment
+gunicorn>=20.1.0           # WSGI HTTP Server
+redis>=4.3.0               # Redis for caching (optional)
+celery>=5.2.0              # Distributed task queue (optional)
+
+# GPU Support (automatically installed with torch if CUDA available)
+# For CPU-only installation, use: 
+# torch==1.12.0+cpu torchvision==0.13.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+
+# For specific CUDA versions, use:
+# torch==1.12.0+cu116 torchvision==0.13.0+cu116 -f https://download.pytorch.org/whl/torch_stable.html

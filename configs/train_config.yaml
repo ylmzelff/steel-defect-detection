@@ -1,0 +1,131 @@
+# Training Configuration for Steel Defect Detection
+# Optimized hyperparameters for NEU dataset
+
+# Model configuration
+model:
+  name: "yolov8n.pt" # YOLOv8 nano - fastest for development
+  variants:
+    - "yolov8n.pt" # 3.2M params - fastest
+    - "yolov8s.pt" # 11.2M params - balanced
+    - "yolov8m.pt" # 25.9M params - accurate
+    - "yolov8l.pt" # 43.7M params - very accurate
+    - "yolov8x.pt" # 68.2M params - most accurate
+
+# Dataset configuration
+data:
+  config: "configs/neu_defect.yaml"
+  input_size: 640
+  classes: 6
+
+# Training parameters
+training:
+  epochs: 50
+  batch_size: 16 # Adjust based on GPU memory
+  patience: 10 # Early stopping patience
+  save_best: true
+  save_last: true
+
+  # Optimization
+  optimizer: "AdamW"
+  learning_rate:
+    initial: 0.01
+    final: 0.01
+    warmup_epochs: 3
+    warmup_momentum: 0.8
+
+  weight_decay: 0.0005
+  momentum: 0.937
+
+  # Loss weights
+  loss_weights:
+    box: 7.5
+    cls: 0.5
+    dfl: 1.5
+
+  # Regularization
+  label_smoothing: 0.0
+  dropout: 0.0
+
+# Data augmentation
+augmentation:
+  mosaic: 1.0 # Mosaic augmentation probability
+  mixup: 0.0 # Mixup augmentation probability
+  copy_paste: 0.0 # Copy-paste augmentation probability
+
+  # Geometric transformations
+  degrees: 0.0 # Rotation range
+  translate: 0.1 # Translation fraction
+  scale: 0.5 # Scale range
+  shear: 0.0 # Shear range
+  perspective: 0.0 # Perspective range
+
+  # Color augmentation
+  hsv_h: 0.015 # Hue variation
+  hsv_s: 0.7 # Saturation variation
+  hsv_v: 0.4 # Value variation
+
+  # Flip augmentation
+  fliplr: 0.5 # Horizontal flip probability
+  flipud: 0.0 # Vertical flip probability
+
+# Validation
+validation:
+  interval: 1 # Validate every N epochs
+  save_json: true # Save validation results to JSON
+  conf_threshold: 0.25 # Confidence threshold
+  iou_threshold: 0.7 # IoU threshold for NMS
+  max_detections: 300 # Maximum detections per image
+
+# Hardware configuration
+hardware:
+  device: "auto" # auto, cpu, 0, 1, 2, etc.
+  workers: 4 # Number of data loading workers
+  mixed_precision: true # Use mixed precision training (fp16)
+
+  # GPU memory optimization
+  gpu_memory:
+    low:
+      batch_size: 4
+      workers: 2
+    medium:
+      batch_size: 8
+      workers: 4
+    high:
+      batch_size: 16
+      workers: 8
+    ultra:
+      batch_size: 32
+      workers: 12
+
+# Logging and monitoring
+logging:
+  project: "runs/detect"
+  name: "steel_defect_experiment"
+  save_plots: true
+  save_confusion_matrix: true
+  save_predictions: true
+  verbose: true
+
+  # Weights & Biases integration (optional)
+  wandb:
+    enabled: false
+    project: "steel-defect-detection"
+    tags: ["yolov8", "steel", "defect", "detection"]
+
+# Export configuration
+export:
+  formats: ["pt", "onnx", "engine", "torchscript"]
+  optimize: true
+  half: true # FP16 export
+
+# Deployment
+deployment:
+  confidence: 0.25 # Inference confidence threshold
+  iou_threshold: 0.45 # Inference IoU threshold
+  max_detections: 1000 # Maximum detections per image
+
+  # Model serving
+  serving:
+    port: 8080
+    host: "0.0.0.0"
+    workers: 4

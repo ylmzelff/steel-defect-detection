@@ -1,0 +1,76 @@
+# NEU Steel Defect Detection Dataset Configuration
+# YOLOv8 training configuration for steel surface defect detection
+# Dataset: NEU Steel Surface Defect Database
+# Classes: 6 types of steel surface defects
+
+# Dataset root path (relative to project root)
+path: ./data/dataset
+
+# Dataset splits (relative to path)
+train: images/train
+val: images/valid
+test: images/test
+
+# Class configuration
+nc: 6 # Number of classes
+names:
+  0: crazing # Surface cracking defects
+  1: inclusion # Foreign material inclusion defects
+  2: patches # Surface patch defects
+  3: pitted_surface # Pitted surface defects
+  4: rolled-in_scale # Rolled-in scale defects
+  5: scratches # Surface scratch defects
+
+# Additional metadata
+description: "NEU Steel Surface Defect Detection Dataset"
+version: "1.0"
+authors: "Steel Defect Detection Team"
+date: "2024"
+
+# Training hyperparameters (YOLOv8 defaults)
+# These can be overridden in training scripts
+hyperparameters:
+  lr0: 0.01 # initial learning rate
+  lrf: 0.01 # final OneCycleLR learning rate (lr0 * lrf)
+  momentum: 0.937 # SGD momentum/Adam beta1
+  weight_decay: 0.0005 # optimizer weight decay
+  warmup_epochs: 3.0 # warmup epochs
+  warmup_momentum: 0.8 # warmup initial momentum
+  box: 0.05 # box loss gain
+  cls: 0.5 # cls loss gain
+  dfl: 1.5 # dfl loss gain
+  pose: 12.0 # pose loss gain
+  kobj: 1.0 # keypoint obj loss gain
+  label_smoothing: 0.0 # label smoothing epsilon
+  nbs: 64 # nominal batch size
+  hsv_h: 0.015 # image HSV-Hue augmentation (fraction)
+  hsv_s: 0.7 # image HSV-Saturation augmentation (fraction)
+  hsv_v: 0.4 # image HSV-Value augmentation (fraction)
+  degrees: 0.0 # image rotation (+/- deg)
+  translate: 0.1 # image translation (+/- fraction)
+  scale: 0.5 # image scale (+/- gain)
+  shear: 0.0 # image shear (+/- deg)
+  perspective: 0.0 # image perspective (+/- fraction), range 0-0.001
+  flipud: 0.0 # image flip up-down (probability)
+  fliplr: 0.5 # image flip left-right (probability)
+  mosaic: 1.0 # image mosaic (probability)
+  mixup: 0.0 # image mixup (probability)
+  copy_paste: 0.0 # segment copy-paste (probability)
+
+# Dataset statistics (for reference)
+statistics:
+  total_images: 1800
+  train_images: 1260 # 70%
+  val_images: 360 # 20%
+  test_images: 180 # 10%
+  image_size: "200x200 pixels"
+  format: "JPG images, TXT labels"
+
+# Class distribution (approximate)
+class_distribution:
+  crazing: 300
+  inclusion: 300
+  patches: 300
+  pitted_surface: 300
+  rolled-in_scale: 300
+  scratches: 300
