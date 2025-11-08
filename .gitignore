@@ -1,12 +1,13 @@
 # Ham veri ve ara dosyalar (çok büyük)  
 NEU-DET/
-runs/
+# runs/ - Bu satır kaldırıldı, eğitim sonuçlarını GitHub'a dahil ediyoruz
 
 # Dataset folders (processed data is included)
 # labels/ - Bu satır kaldırıldı, çünkü işlenmiş labels'lar GitHub'da olmalı
 
-# Model outputs
-*.pt
+# Model weights (büyük dosyalar - runs/detect/*/weights/*.pt files)
+runs/*/weights/*.pt
+runs/*/weights/*.pth
 *.pth
 *.weights
 
