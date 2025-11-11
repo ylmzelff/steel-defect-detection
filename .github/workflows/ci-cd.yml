@@ -1,0 +1,270 @@
+name: Steel Defect Detection MLOps CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Code Quality and Testing
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9, 3.10]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov black flake8 mypy
+
+      - name: Code formatting check (Black)
+        run: black --check --diff src/ tests/
+
+      - name: Linting (Flake8)
+        run: flake8 src/ tests/ --max-line-length=88 --extend-ignore=E203,W503
+
+      - name: Type checking (MyPy)
+        run: mypy src/ --ignore-missing-imports
+
+      - name: Run unit tests
+        run: |
+          pytest tests/ -v --cov=src --cov-report=xml --cov-report=html
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+
+  # Security Scanning
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-results.sarif"
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: "trivy-results.sarif"
+
+      - name: Safety check for Python dependencies
+        run: |
+          pip install safety
+          safety check --json --output safety-results.json || true
+
+  # Model Validation
+  model-validation:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Validate model file exists
+        run: |
+          if [ ! -f "models/best.pt" ]; then
+            echo "Error: Model file models/best.pt not found"
+            exit 1
+          fi
+          echo "✅ Model file validated"
+
+      - name: Test model loading
+        run: |
+          python -c "
+          from ultralytics import YOLO
+          import torch
+          print('Loading model...')
+          model = YOLO('models/best.pt')
+          print(f'✅ Model loaded successfully')
+          print(f'Model device: {next(model.model.parameters()).device}')
+          "
+
+      - name: Run model inference test
+        run: |
+          python -c "
+          from ultralytics import YOLO
+          import numpy as np
+          from PIL import Image
+          print('Testing model inference...')
+          model = YOLO('models/best.pt')
+          # Create dummy test image
+          test_img = Image.fromarray(np.random.randint(0, 255, (640, 640, 3), dtype=np.uint8))
+          results = model(test_img, verbose=False)
+          print(f'✅ Inference test passed. Detections: {len(results[0].boxes) if results[0].boxes is not None else 0}')
+          "
+
+  # Build and Push Docker Image
+  build-push:
+    runs-on: ubuntu-latest
+    needs: [test, security, model-validation]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./deployment/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Deploy to Staging
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: build-push
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment:
+      name: staging
+      url: https://steel-defect-staging.yourdomain.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to staging
+        run: |
+          echo "🚀 Deploying to staging environment..."
+          echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          # Add your staging deployment commands here
+          # Example: kubectl, docker-compose, or cloud provider CLI
+
+      - name: Health check
+        run: |
+          echo "🏥 Running health checks..."
+          # Add health check commands here
+          # curl -f https://steel-defect-staging.yourdomain.com/health
+
+      - name: Run smoke tests
+        run: |
+          echo "🧪 Running smoke tests..."
+          # Add smoke test commands here
+          # python tests/smoke_tests.py --endpoint https://steel-defect-staging.yourdomain.com
+
+  # Deploy to Production
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: https://steel-defect.yourdomain.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to production
+        run: |
+          echo "🚀 Deploying to production environment..."
+          echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          # Add your production deployment commands here
+
+      - name: Health check
+        run: |
+          echo "🏥 Running production health checks..."
+          # Add production health check commands here
+
+      - name: Notify deployment
+        run: |
+          echo "📢 Production deployment completed successfully!"
+          # Add notification commands (Slack, email, etc.)
+
+  # Model Performance Monitoring
+  model-monitoring:
+    runs-on: ubuntu-latest
+    needs: deploy-production
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup monitoring
+        run: |
+          echo "📊 Setting up model performance monitoring..."
+          # Add monitoring setup commands here
+          # This could include updating monitoring dashboards,
+          # setting up alerts, or updating model registry
+
+      - name: Log model metrics
+        run: |
+          echo "📈 Logging model deployment metrics..."
+          # Log deployment timestamp, model version, etc.

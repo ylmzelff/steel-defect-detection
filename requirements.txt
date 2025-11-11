@@ -23,16 +23,21 @@ tqdm>=4.64.0               # Progress bars
 click>=8.0.0               # Command line interface
 rich>=12.0.0               # Rich text and progress displays
 
-# MLOps and Experiment Tracking (optional)
-# wandb>=0.13.0            # Weights & Biases experiment tracking
-# tensorboard>=2.8.0       # TensorBoard logging
-# mlflow>=1.28.0           # MLflow experiment tracking
+# MLOps and Experiment Tracking
+mlflow>=2.8.0              # MLflow experiment tracking and model registry
+# wandb>=0.13.0            # Weights & Biases experiment tracking (optional)
+tensorboard>=2.8.0         # TensorBoard logging
 
 # API and Web Framework (for deployment)
 fastapi>=0.95.0            # Fast API framework
 uvicorn>=0.18.0            # ASGI server
 pydantic>=1.9.0            # Data validation
 python-multipart>=0.0.5    # File upload support
+
+# Monitoring and Metrics
+prometheus-client>=0.16.0   # Prometheus metrics
+scipy>=1.9.0               # Statistical functions for drift detection
+scikit-learn>=1.1.0        # ML metrics and utilities
 
 # Development and Testing
 pytest>=7.0.0              # Testing framework
